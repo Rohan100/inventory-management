@@ -7,19 +7,27 @@ const QUEUE_NAME = 'supplier-reorder-queue';
 let bullQueue = null;
 let useBullMQ = false;
 
-const redisHost = process.env.REDIS_HOST || '127.0.0.1';
-const redisPort = process.env.REDIS_PORT || 6379;
-
-const redisConnection = new Redis({
-  host: redisHost,
-  port: redisPort,
-  maxRetriesPerRequest: null,
-  lazyConnect: true,
-  retryStrategy: () => null
-});
+let redisConnection = null;
 
 async function initQueue() {
+  const redisHost = process.env.REDIS_HOST || '127.0.0.1';
+  const redisPort = process.env.REDIS_PORT || 6379;
+
   try {
+    redisConnection = new Redis({
+      host: redisHost,
+      port: redisPort,
+      maxRetriesPerRequest: null,
+      lazyConnect: true,
+      retryStrategy: () => null,
+      enableOfflineQueue: false
+    });
+
+    // Attach error handler immediately to prevent unhandled error events
+    redisConnection.on('error', (err) => {
+      // Silently handled — fallback is already in place
+    });
+
     await redisConnection.connect();
     console.log('⚡ Connected to Redis. Initializing BullMQ Worker Queue...');
 
@@ -51,6 +59,11 @@ async function initQueue() {
 
     useBullMQ = true;
   } catch (err) {
+    // Clean up the Redis connection on failure
+    if (redisConnection) {
+      try { redisConnection.disconnect(); } catch (_) {}
+      redisConnection = null;
+    }
     console.warn(`ℹ️ Redis not available (${err.message}). Using in-memory fallback queue.`);
     useBullMQ = false;
   }
