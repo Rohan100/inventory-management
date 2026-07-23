@@ -36,6 +36,11 @@ initSocket(server);
 // Initialize Background Job Queue (BullMQ with Fallback)
 initQueue();
 
+// Root route - Server check
+app.get('/', (req, res) => {
+  res.json({ message: '✅ Inventory Management API Server is running!' });
+});
+
 // Production Health & System Readiness API
 app.get('/api/health', (req, res) => {
   res.json({
