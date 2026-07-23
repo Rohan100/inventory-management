@@ -5,8 +5,13 @@ let io = null;
 function initSocket(server) {
   io = new Server(server, {
     cors: {
-      origin: '*',
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
+      origin: [
+        'https://inventory-management-oajq.vercel.app',
+        'http://localhost:5173',
+        'http://localhost:5174'
+      ],
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+      credentials: true
     }
   });
 
